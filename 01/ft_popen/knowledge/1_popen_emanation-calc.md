@@ -1,7 +1,5 @@
 # The Emanation Calculus of popen(): From Purpose to Mechanism
 
-
-
 ## LEVEL 1: ARCHETYPAL PURPOSE
 **What is popen trying to achieve in the universe of computation?**
 

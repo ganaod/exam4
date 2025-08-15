@@ -2,19 +2,12 @@
 #include <stdlib.h>
 
 /* 
-.file: name of executable to launch
-.argv: arg array (execvp style)
-. type: 
-	r: read from cmd
-	w: write to cmd 
-fd: connected to cmd	
-
 ALGO
 1. create pipe for comms
 2. fork to create child proc
 3. in child: redirect stdin/out & execute cmd
 4. in parent: ret appropriate pipe end */
-int	fd_popen(const char *file, char *const argv[1], char type)
+int	ft_popen(const char *file, char *const argv[1], char type)
 {
 	// 1. validate input
 	// no NULL-ptrs & valid type
@@ -24,8 +17,8 @@ int	fd_popen(const char *file, char *const argv[1], char type)
 	// 2. create pipe for unidirectional communication
 	// array for pipe ends. will hold fd[0]: read, fd[1]: write
 	int	fds[2];
-	if (pipe(fds) == -1)	return -1;
-
+	if (pipe(fds) == -1)	
+		return -1;
 
 	// 3. fork: create worker process
 	pid_t	pid = fork();
@@ -92,20 +85,3 @@ int	fd_popen(const char *file, char *const argv[1], char type)
 	}
 }
 
-/* err & resource management
-
-system err handling:
-.pipe() fail: no fildes available
-.fork() fail: no mem/processes
-.dup2 fail: invalid descriptors
-.execvp fail: cmd not found 
-
-fildes management:
-.crucial to close unnecessary descriptors
-.avoid leaks
-.close in correct order to avoid deadlocks 
-
-zombie processes:
-.this implementation doesn't handle wait()
-.in complete implementation, would need ft_pclose
-.store PIDs to wait() for them later */

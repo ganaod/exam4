@@ -1,0 +1,17 @@
+err & resource management
+
+system err handling:
+.pipe() fail: no fildes available
+.fork() fail: no mem/processes
+.dup2 fail: invalid descriptors
+.execvp fail: cmd not found 
+
+fildes management:
+.crucial to close unnecessary descriptors
+.avoid leaks
+.close in correct order to avoid deadlocks 
+
+zombie processes:
+.this implementation doesn't handle wait()
+.in complete implementation, would need ft_pclose
+.store PIDs to wait() for them later

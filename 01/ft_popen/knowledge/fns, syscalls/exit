@@ -1,0 +1,60 @@
+Why exit(1) Instead of return -1: Process Role Separation
+
+First principle: After fork(), you have two separate processes with completely different jobs.
+The fundamental issue: return -1 treats the child as if it should report back to the same caller as the parent. This violates process separation.
+What Happens with return -1 (Wrong):
+cif (pid == 0) {  // child process  
+    if (dup2(fds[1], STDOUT_FILENO) == -1)
+        return -1;  // DISASTER: child continues as "parent"
+}
+Catastrophic sequence:
+
+Child returns from ft_popen function
+Child continues executing parent code path:
+cif (type == 'r') {
+    close(fds[1]);     // Child also closes pipe ends
+    return fds[0];     // Child ALSO returns file descriptor!
+}
+
+Result: Two processes both think they're the parent
+Caller receives: File descriptor from parent (correct) + garbage from child (disaster)
+Resource chaos: Both processes manage same pipe, potential double-free, undefined behavior
+
+Why exit(1) is Correct:
+Child's job specification:
+
+Set up I/O redirection (dup2)
+Become tool program (execvp)
+If either fails: Terminate immediately
+
+Logical reasoning: Child has zero reason to return to the original function's caller.
+The child's caller is not your user - the child's caller is the kernel scheduler. When child fails, it should report failure to the system (via exit code), not to your user.
+Process Role Architecture:
+Parent process role:
+
+Remain your original program
+Manage pipe communication
+Return file descriptor to caller
+Handle errors by returning -1
+
+Child process role:
+
+Transform into tool program
+Never return to original function
+Report failures to system via exit codes
+Never interact with original caller again
+
+The Contract Violation:
+c// WRONG: Child pretending to be parent
+if (pid == 0) {
+    if (dup2(...) == -1)
+        return -1;  // Violates "child becomes tool" contract
+}
+
+// CORRECT: Child fulfills its role or terminates  
+if (pid == 0) {
+    if (dup2(...) == -1)
+        exit(1);    // "I failed to become the tool, terminating"
+}
+The parent can detect child failure through wait() and exit codes, but the child should never return control to the function caller.
+First principle applied: Each process has exactly one responsibility. Mixing responsibilities creates chaos. The child's responsibility ends with "become tool program or die trying."

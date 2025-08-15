@@ -1,0 +1,47 @@
+int ft_popen(const char *file, char *const argv[], char type);
+
+params:
+.file: name of executable to launch
+.argv: arg array (execvp style)
+. type: 
+	r: read from cmd
+	w: write to cmd 
+
+return:
+fd: connected to cmd	
+
+
+
+
+
+analysis of const usage:
+const char *file
+
+Memory layout: pointer → string data
+Constraint: string data cannot be modified through this pointer
+Pointer itself: can be reassigned (but we don't need to)
+
+Logical reasoning: The function needs to read the executable name to pass to execvp(). There's no computational reason to modify the filename string - it's purely input data. Preventing modification eliminates an entire class of bugs where the function accidentally corrupts the caller's string.
+char *const argv[]
+
+Memory layout: array of pointers → string data
+Constraint: each pointer in the array cannot be reassigned
+String data: can be modified through the pointers
+
+Critical insight: This differs from const char *argv[] (array of pointers to const strings).
+Logical reasoning:
+
+execvp() requires char *const argv[] - it needs the freedom to potentially modify argument strings during execution setup
+The array structure itself must remain stable (pointers can't be reassigned) because execvp() walks the array by pointer arithmetic
+The function doesn't need to reassign the pointers, only traverse them
+
+Why not const char *argv[]?
+Type compatibility: execvp() signature is:
+cint execvp(const char *file, char *const argv[]);
+If we used const char *argv[], we'd have a type mismatch. The strings through argv must remain modifiable because:
+
+Historical Unix design: Some implementations of exec family modify argument strings during environment setup
+Process initialization: The kernel may need to modify argv strings when setting up the new process image
+
+Evidence from your implementation: You correctly pass argv directly to execvp() without type casting, which would be impossible with const strings.
+The const qualifications reflect the data flow constraints - file is pure input (read-only), argv is structural input where the container is fixed but contents may be modified by the target process.

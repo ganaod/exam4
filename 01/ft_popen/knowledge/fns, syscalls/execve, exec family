@@ -1,20 +1,93 @@
-EXECVP vs EXEC FAMILY:
-- execvp() searches PATH automatically
-- Uses argument array (safer than system())
-- Completely replaces process image
+execvp Breakdown: First Principles Mental Model
+Correct decomposition:
 
-
-
-Process image = the loaded program in memory:
-
-Before exec: Child process is running a copy of YOUR program
-After exec: Child process is running the TOOL program (wc)
-execvp() completely replaces the program code, but keeps PID and file descriptors
-
-execvp breakdown:
-
-exec = execute (replace current program)
+exec = execute (replace current process image)
 v = vector (arguments as array: ["wc", "-l", NULL])
-p = PATH (search in PATH environment variable)
+p = PATH (search PATH environment variable)
 
-Alternative forms: execl(), execle(), execve() - different argument formats
+
+Mental model: "Execute using argument Vector, searching PATH"
+
+The Process Image Replacement Concept
+
+Before execvp(): Child process is running your program's code
+if (pid == 0) {  // Child is running YOUR ft_popen code
+    // Child has YOUR program in memory
+
+execvp() call: Complete brain transplant
+execvp("wc", argv);  // Replace entire program with wc
+
+After execvp(): Child process is running wc program's code
+
+Same PID, same file descriptors
+Completely different program in memory
+Never returns to your code (success = total replacement)
+
+
+
+
+
+The Three Fundamental Operations
+
+1. exec - Process Image Replacement
+
+What it does: Throws away current program, loads new program into same process container
+Analogy: Process = theater, program = play
+
+Same theater (PID), completely different play (wc instead of your code)
+Same stage props (file descriptors), different actors (wc program)
+
+
+2. v - Vector Arguments
+
+What it means: Arguments passed as array instead of comma-separated parameters
+Contrast with alternatives:
+
+execl("wc", "wc", "-l", NULL) ← arguments as individual parameters
+execvp("wc", argv) ← arguments as array vector
+
+Why vector: Safer, enables dynamic argument construction
+
+3. p - PATH Search
+What it does: Searches directories in PATH environment variable
+
+Logical behavior:
+
+	Look for wc in /usr/bin/
+	Look for wc in /bin/
+	Look for wc in other PATH directories
+	Return ENOENT if not found anywhere
+
+Security advantage: Uses same lookup mechanism as your shell
+
+
+Mental Execution Flow
+execvp("wc", ["wc", "-l", NULL]);
+
+Step 1: Search PATH for executable named "wc"
+Step 2: Load wc program into current process memory space
+Step 3: Start executing wc with arguments ["-l"]
+Step 4: Never return (success means total replacement)
+
+
+
+
+The "Never Returns" Principle
+Critical insight: execvp() never returns on success
+execvp("wc", argv);    
+exit(1);  // Only executes if execvp FAILED
+
+Why: Successful execvp() destroys your program. There's no "your program" left to return to.
+Return only means: "I failed to replace myself, handle the error"
+
+
+Exec Family Mental Map
+Think of it as: Different ways to specify the same fundamental operation (process replacement)
+
+execl = list arguments individually
+execv = vector arguments as array
+execp = search PATH environment
+exece = custom environment variables
+
+execvp combines: vector arguments + PATH search (most practical combination)
+The mental key: execvp = "Replace myself with this tool, using these arguments, finding it via PATH search"
