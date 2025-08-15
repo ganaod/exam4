@@ -1,16 +1,16 @@
 Assignment name  : vbc
 Expected files   : *.c *.h
 Allowed functions: malloc, calloc, realloc, free, printf, isdigit, write
---------------------------------------------------------------------------------
 
-Write a program that will print the result of a math expression given as
-argument.
+Write a program that will print the result of a math expression given as argument.
 You must handle the operations + * and the parenthesis.
 You don't have to handle whitespaces in the expression.
 All the values in the expression will be between 0 and 9 included.
+
 In case of unexpected symbol or inappropriate parenthesis, you will
 print "Unexpected token '%c'\n" and exit with the code 1 (if the
 symbol is the end of input you will print: "Unexpected end of input\n").
+
 In case of a syscall failure you will just exit with the code 1.
 
 You will find in this directory the beginning of the code you need to write.

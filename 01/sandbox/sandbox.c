@@ -1,22 +1,22 @@
 /*
- * EJERCICIO: SANDBOX
+ * EXERCISE: SANDBOX
  * 
- * DESCRIPCIÓN:
- * Crear un "sandbox" que ejecute una función y determine si es "buena" o "mala".
- * Una función es mala si: segfault, abort, exit code != 0, o timeout.
+ * DESCRIPTION:
+ * Create a "sandbox" that executes a function and determines if it's "good" or "bad".
+ * A function is bad if: segfault, abort, exit code != 0, or timeout.
  * 
- * CONCEPTOS CLAVE:
- * 1. SIGNALS: Manejar SIGALRM para timeout
- * 2. FORK: Ejecutar función en proceso separado
- * 3. WAITPID: Obtener información sobre cómo terminó el proceso
- * 4. ALARM: Establecer timeout para la función
- * 5. SIGNAL HANDLING: Configurar manejadores de señales
+ * KEY CONCEPTS:
+ * 1. SIGNALS: Handle SIGALRM for timeout
+ * 2. FORK: Execute function in separate process
+ * 3. WAITPID: Get information about how the process terminated
+ * 4. ALARM: Set timeout for the function
+ * 5. SIGNAL HANDLING: Configure signal handlers
  * 
- * ALGORITMO:
- * 1. Fork proceso hijo para ejecutar la función
- * 2. En el padre: establecer alarm y esperar con waitpid
- * 3. Analizar cómo terminó el proceso (normal, signal, timeout)
- * 4. Retornar 1 (buena), 0 (mala), o -1 (error)
+ * ALGORITHM:
+ * 1. Fork child process to execute the function
+ * 2. In parent: set alarm and wait with waitpid
+ * 3. Analyze how the process terminated (normal, signal, timeout)
+ * 4. Return 1 (good), 0 (bad), or -1 (error)
  */
 
  #include <unistd.h>
@@ -29,33 +29,33 @@
  #include <sys/types.h>
  #include <string.h>
  
- // Variable global para el PID del proceso hijo
- static pid_t child_pid;
- 
- // Manejador de señal para SIGALRM (timeout)
- void alarm_handler(int sig)
- {
-	 /*
-	  * MANEJADOR DE TIMEOUT:
-	  * - Se ejecuta cuando el alarm() expira
-	  * - No necesita hacer nada especial
-	  * - Su existencia hace que waitpid() retorne con EINTR
-	  */
-	 (void)sig;  // Suprimir warning de parámetro no usado
- }
+ // Global variable for child process PID
+static pid_t child_pid;
+
+
+/* sig handler for SIGALRM (timeout) / timeout handler:
+.executes when alarm() expires
+.doesn't need special logic
+.its existence makes waitpid() return with EINTR */
+void	alarm_handler(int sig)
+{
+	(void)sig;	// suppress unused param warning
+}
+
+
  
  int sandbox(void (*f)(void), unsigned int timeout, bool verbose)
  {
 	 /*
-	  * PARÁMETROS:
-	  * - f: Función a probar
-	  * - timeout: Tiempo límite en segundos
-	  * - verbose: Si imprimir mensajes de diagnóstico
+	  * PARAMETERS:
+	  * - f: Function to test
+	  * - timeout: Time limit in seconds
+	  * - verbose: Whether to print diagnostic messages
 	  * 
-	  * RETORNO:
-	  * - 1: función "buena" (exit code 0, sin signals, sin timeout)
-	  * - 0: función "mala" (exit code != 0, signal, o timeout)
-	  * - -1: error en sandbox (fork falló, etc.)
+	  * RETURN:
+	  * - 1: "good" function (exit code 0, no signals, no timeout)
+	  * - 0: "bad" function (exit code != 0, signal, or timeout)
+	  * - -1: error in sandbox (fork failed, etc.)
 	  */
 	 
 	 struct sigaction sa;
@@ -63,150 +63,150 @@
 	 int status;
 	 
 	 /*
-	  * CONFIGURAR MANEJADOR DE SIGALRM:
-	  * - Configurar manejador personalizado para timeout
-	  * - Limpiar máscara de señales
-	  * - No reiniciar syscalls automáticamente
+	  * CONFIGURE SIGALRM HANDLER:
+	  * - Set custom handler for timeout
+	  * - Clear signal mask
+	  * - Don't restart syscalls automatically
 	  */
 	 sa.sa_handler = alarm_handler;
-	 sa.sa_flags = 0;  // No SA_RESTART: queremos que waitpid sea interrumpido
+	 sa.sa_flags = 0;  // No SA_RESTART: we want waitpid to be interrupted
 	 sigemptyset(&sa.sa_mask);
 	 sigaction(SIGALRM, &sa, NULL);
 	 
 	 /*
-	  * FORK PROCESO HIJO:
+	  * FORK CHILD PROCESS:
 	  */
 	 pid = fork();
 	 if (pid == -1)
-		 return -1;  // Error en fork
+		 return -1;  // Fork error
 	 
-	 if (pid == 0)  // PROCESO HIJO
+	 if (pid == 0)  // CHILD PROCESS
 	 {
 		 /*
-		  * EJECUTAR FUNCIÓN EN HIJO:
-		  * - Llamar a la función proporcionada
-		  * - Si retorna normalmente, salir con código 0
-		  * - Si hace segfault/abort, el kernel enviará señal
+		  * EXECUTE FUNCTION IN CHILD:
+		  * - Call the provided function
+		  * - If returns normally, exit with code 0
+		  * - If segfaults/aborts, kernel will send signal
 		  */
 		 f();
-		 exit(0);  // Función terminó normalmente
+		 exit(0);  // Function terminated normally
 	 }
 	 
-	 // PROCESO PADRE
+	 // PARENT PROCESS
 	 child_pid = pid;
 	 
 	 /*
-	  * ESTABLECER TIMEOUT:
-	  * - alarm() envía SIGALRM después de timeout segundos
-	  * - Esto interrumpirá waitpid() si la función toma demasiado tiempo
+	  * SET TIMEOUT:
+	  * - alarm() sends SIGALRM after timeout seconds
+	  * - This will interrupt waitpid() if function takes too long
 	  */
 	 alarm(timeout);
 	 
 	 /*
-	  * ESPERAR AL PROCESO HIJO:
-	  * - waitpid() puede retornar por varias razones:
-	  *   1. El hijo terminó normalmente (exit)
-	  *   2. El hijo fue terminado por una señal
-	  *   3. waitpid fue interrumpido por SIGALRM (timeout)
+	  * WAIT FOR CHILD PROCESS:
+	  * - waitpid() can return for various reasons:
+	  *   1. Child terminated normally (exit)
+	  *   2. Child was terminated by signal
+	  *   3. waitpid was interrupted by SIGALRM (timeout)
 	  */
 	 if (waitpid(pid, &status, 0) == -1)
 	 {
-		 if (errno == EINTR)  // Interrumpido por SIGALRM
+		 if (errno == EINTR)  // Interrupted by SIGALRM
 		 {
 			 /*
-			  * TIMEOUT DETECTADO:
-			  * - waitpid fue interrumpido por alarm
-			  * - El hijo probablemente sigue ejecutándose
-			  * - Matarlo con SIGKILL y recoger su estado
+			  * TIMEOUT DETECTED:
+			  * - waitpid was interrupted by alarm
+			  * - Child is probably still running
+			  * - Kill it with SIGKILL and collect its state
 			  */
 			 kill(pid, SIGKILL);
-			 waitpid(pid, NULL, 0);  // Recoger proceso zombie
+			 waitpid(pid, NULL, 0);  // Collect zombie process
 			 
 			 if (verbose)
 				 printf("Bad function: timed out after %d seconds\n", timeout);
 			 return 0;
 		 }
-		 return -1;  // Otro tipo de error
+		 return -1;  // Other type of error
 	 }
 	 
 	 /*
-	  * ANALIZAR CÓMO TERMINÓ EL PROCESO:
+	  * ANALYZE HOW THE PROCESS TERMINATED:
 	  */
 	 
 	 if (WIFEXITED(status))
 	 {
 		 /*
-		  * TERMINACIÓN NORMAL (exit):
-		  * - El proceso llamó exit() o retornó de main
-		  * - Verificar el código de salida
+		  * NORMAL TERMINATION (exit):
+		  * - Process called exit() or returned from main
+		  * - Check the exit code
 		  */
 		 if (WEXITSTATUS(status) == 0)
 		 {
 			 if (verbose)
 				 printf("Nice function!\n");
-			 return 1;  // Función buena
+			 return 1;  // Good function
 		 }
 		 else
 		 {
 			 if (verbose)
 				 printf("Bad function: exited with code %d\n", WEXITSTATUS(status));
-			 return 0;  // Función mala
+			 return 0;  // Bad function
 		 }
 	 }
 	 
 	 if (WIFSIGNALED(status))
 	 {
 		 /*
-		  * TERMINACIÓN POR SEÑAL:
-		  * - El proceso fue terminado por una señal (segfault, abort, etc.)
-		  * - Obtener el número de señal para diagnóstico
+		  * TERMINATION BY SIGNAL:
+		  * - Process was terminated by signal (segfault, abort, etc.)
+		  * - Get signal number for diagnostics
 		  */
 		 int sig = WTERMSIG(status);
 		 if (verbose)
 			 printf("Bad function: %s\n", strsignal(sig));
-		 return 0;  // Función mala
+		 return 0;  // Bad function
 	 }
 	 
-	 return -1;  // Estado no reconocido
+	 return -1;  // Unrecognized state
  }
  
  /*
-  * EJEMPLOS DE FUNCIONES PARA PROBAR:
+  * EXAMPLE FUNCTIONS TO TEST:
   * 
   * void nice_function(void)
   * {
-  *     // Esta función no hace nada malo
+  *     // This function doesn't do anything bad
   *     return;
   * }
   * 
   * void bad_function_exit_code(void)
   * {
-  *     // Esta función termina con código de error
+  *     // This function terminates with error code
   *     exit(1);
   * }
   * 
   * void bad_function_segfault(void)
   * {
-  *     // Esta función causa segmentation fault
+  *     // This function causes segmentation fault
   *     int *ptr = NULL;
   *     *ptr = 42;
   * }
   * 
   * void bad_function_timeout(void)
   * {
-  *     // Esta función nunca termina
+  *     // This function never terminates
   *     while (1) {}
   * }
   * 
   * void bad_function_abort(void)
   * {
-  *     // Esta función llama abort()
+  *     // This function calls abort()
   *     abort();
   * }
   */
  
  /*
-  * EJEMPLO DE USO:
+  * USAGE EXAMPLE:
   * 
   * int main()
   * {
@@ -214,87 +214,87 @@
   * 
   *     printf("Testing nice function:\n");
   *     result = sandbox(nice_function, 5, true);
-  *     printf("Result: %d\n\n", result);  // Esperado: 1
+  *     printf("Result: %d\n\n", result);  // Expected: 1
   * 
   *     printf("Testing bad function (segfault):\n");
   *     result = sandbox(bad_function_segfault, 5, true);
-  *     printf("Result: %d\n\n", result);  // Esperado: 0
+  *     printf("Result: %d\n\n", result);  // Expected: 0
   * 
   *     printf("Testing bad function (timeout):\n");
   *     result = sandbox(bad_function_timeout, 2, true);
-  *     printf("Result: %d\n\n", result);  // Esperado: 0
+  *     printf("Result: %d\n\n", result);  // Expected: 0
   * 
   *     return 0;
   * }
   */
  
  /*
-  * ANÁLISIS DE ESTADOS DEL PROCESO:
+  * PROCESS STATE ANALYSIS:
   * 
   * 1. WIFEXITED(status):
-  *    - true si el proceso terminó con exit() o return
-  *    - WEXITSTATUS(status) obtiene el código de salida
+  *    - true if process terminated with exit() or return
+  *    - WEXITSTATUS(status) gets the exit code
   * 
   * 2. WIFSIGNALED(status):
-  *    - true si el proceso fue terminado por señal
-  *    - WTERMSIG(status) obtiene el número de señal
-  *    - Incluye: SIGSEGV, SIGABRT, SIGKILL, etc.
+  *    - true if process was terminated by signal
+  *    - WTERMSIG(status) gets the signal number
+  *    - Includes: SIGSEGV, SIGABRT, SIGKILL, etc.
   * 
   * 3. WIFSTOPPED(status):
-  *    - true si el proceso fue detenido (SIGSTOP)
-  *    - No relevante para este ejercicio
+  *    - true if process was stopped (SIGSTOP)
+  *    - Not relevant for this exercise
   * 
   * 4. WIFCONTINUED(status):
-  *    - true si el proceso fue continuado (SIGCONT)
-  *    - No relevante para este ejercicio
+  *    - true if process was continued (SIGCONT)
+  *    - Not relevant for this exercise
   */
  
  /*
-  * SEÑALES COMUNES QUE PUEDEN RECIBIRSE:
+  * COMMON SIGNALS THAT CAN BE RECEIVED:
   * 
   * - SIGSEGV (11): Segmentation fault
-  * - SIGABRT (6): Abort signal (llamada a abort())
-  * - SIGFPE (8): Floating point exception (división por cero)
+  * - SIGABRT (6): Abort signal (abort() call)
+  * - SIGFPE (8): Floating point exception (division by zero)
   * - SIGILL (4): Illegal instruction
   * - SIGBUS (7): Bus error
-  * - SIGKILL (9): Kill signal (enviado por el sandbox en timeout)
+  * - SIGKILL (9): Kill signal (sent by sandbox on timeout)
   */
  
  /*
-  * GESTIÓN DE PROCESOS ZOMBIE:
+  * ZOMBIE PROCESS MANAGEMENT:
   * 
-  * Es CRUCIAL hacer waitpid() después de kill() en caso de timeout:
-  * - kill(pid, SIGKILL) termina el proceso
-  * - Pero el proceso queda como "zombie" hasta que el padre haga wait
-  * - waitpid(pid, NULL, 0) limpia el zombie
-  * - Sin esto, se acumulan procesos zombie en el sistema
+  * It's CRUCIAL to do waitpid() after kill() in timeout case:
+  * - kill(pid, SIGKILL) terminates the process
+  * - But process remains as "zombie" until parent does wait
+  * - waitpid(pid, NULL, 0) cleans up the zombie
+  * - Without this, zombie processes accumulate in system
   */
  
  /*
-  * PUNTOS CLAVE PARA EL EXAMEN:
+  * KEY POINTS FOR THE EXAM:
   * 
-  * 1. CONFIGURACIÓN DE SEÑALES:
-  *    - Usar sigaction() en lugar de signal() (más portable)
-  *    - No usar SA_RESTART: queremos que waitpid sea interrumpido
-  *    - El manejador puede estar vacío, solo necesita existir
+  * 1. SIGNAL CONFIGURATION:
+  *    - Use sigaction() instead of signal() (more portable)
+  *    - Don't use SA_RESTART: we want waitpid to be interrupted
+  *    - Handler can be empty, only needs to exist
   * 
-  * 2. DETECCIÓN DE TIMEOUT:
-  *    - alarm() + waitpid() interrumpido por SIGALRM
-  *    - Verificar errno == EINTR
-  *    - Matar proceso hijo y recoger zombie
+  * 2. TIMEOUT DETECTION:
+  *    - alarm() + waitpid() interrupted by SIGALRM
+  *    - Check errno == EINTR
+  *    - Kill child process and collect zombie
   * 
-  * 3. ANÁLISIS DE STATUS:
-  *    - Usar macros WIFEXITED, WIFSIGNALED, etc.
-  *    - No asumir formato específico de status
-  *    - Manejar todos los casos posibles
+  * 3. STATUS ANALYSIS:
+  *    - Use macros WIFEXITED, WIFSIGNALED, etc.
+  *    - Don't assume specific format of status
+  *    - Handle all possible cases
   * 
-  * 4. PREVENCIÓN DE LEAKS:
-  *    - Siempre hacer waitpid() después de kill()
-  *    - No dejar procesos zombie
-  *    - Verificar que todos los caminos de código limpien procesos
+  * 4. LEAK PREVENTION:
+  *    - Always do waitpid() after kill()
+  *    - Don't leave zombie processes
+  *    - Verify all code paths clean up processes
   * 
-  * 5. ROBUSTEZ:
-  *    - Manejar errores de fork(), waitpid(), etc.
-  *    - Funciones muy malas pueden hacer cosas inesperadas
-  *    - El sandbox debe ser más robusto que las funciones que prueba
+  * 5. ROBUSTNESS:
+  *    - Handle errors from fork(), waitpid(), etc.
+  *    - Very bad functions can do unexpected things
+  *    - Sandbox must be more robust than functions it tests
   */
