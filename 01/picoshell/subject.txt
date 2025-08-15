@@ -1,7 +1,6 @@
 Assignment name:	picoshell
 Expected files:		picoshell.c
 Allowed functions:	close, fork, wait, exit, execvp, dup2, pipe
-___________________________________________________________________
 
 Write the following function:
 

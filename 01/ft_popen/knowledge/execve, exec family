@@ -1,0 +1,4 @@
+EXECVP vs EXEC FAMILY:
+- execvp() searches PATH automatically
+- Uses argument array (safer than system())
+- Completely replaces process image

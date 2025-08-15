@@ -1,0 +1,5 @@
+Now you understand.
+popen() enables program composition - using any command-line tool as a function within your program. The fork/exec/pipe dance creates two coordinated processes: one becomes the tool, one manages communication.
+The pipe convention: fds[0] read, fds[1] write is arbitrary Unix convention. Could be reversed.
+The pipe(fds) mechanism: Kernel creates pipe object, assigns two unused file descriptor numbers, writes those numbers into your array.
+Why child/parent order: Two different roles need simultaneous execution - child becomes tool program, parent coordinates communication.

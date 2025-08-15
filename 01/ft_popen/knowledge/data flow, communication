@@ -1,0 +1,31 @@
+COMMUNICATION TYPES:
+'r': parent reads, child writes (child stdout → pipe → parent)
+'w': parent writes, child reads (parent → pipe → child stdin)
+Understanding data flow direction is crucial
+
+
+  * COMMUNICATION DIAGRAM:
+  * 
+  * TYPE 'r' (read from command):
+  * 
+  * PARENT                    PIPE                    CHILD
+  * ------                  ------                  ------
+  *                     fds[0] ←------ fds[1]
+  * read(fd) ←----------- |              | ←------ stdout
+  *                      |              |         (command)
+  * fd = fds[0]          |              |
+  * close(fds[1])        |              |         close(fds[0])
+  *                      |              |         close(fds[1])
+  *                      |              |         dup2(fds[1], STDOUT)
+  * 
+  * TYPE 'w' (write to command):
+  * 
+  * PARENT                    PIPE                    CHILD  
+  * ------                  ------                  ------
+  *                     fds[0] ------→ fds[1]
+  * write(fd) ----------→ |              | ------→ stdin
+  *                      |              |         (command)
+  * fd = fds[1]          |              |
+  * close(fds[0])        |              |         close(fds[0])
+  *                      |              |         close(fds[1])
+  *                      |              |         dup2(fds[0], STDIN)
