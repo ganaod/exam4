@@ -2,3 +2,19 @@ EXECVP vs EXEC FAMILY:
 - execvp() searches PATH automatically
 - Uses argument array (safer than system())
 - Completely replaces process image
+
+
+
+Process image = the loaded program in memory:
+
+Before exec: Child process is running a copy of YOUR program
+After exec: Child process is running the TOOL program (wc)
+execvp() completely replaces the program code, but keeps PID and file descriptors
+
+execvp breakdown:
+
+exec = execute (replace current program)
+v = vector (arguments as array: ["wc", "-l", NULL])
+p = PATH (search in PATH environment variable)
+
+Alternative forms: execl(), execle(), execve() - different argument formats

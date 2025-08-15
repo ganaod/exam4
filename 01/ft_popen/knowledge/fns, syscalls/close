@@ -1,0 +1,12 @@
+close() doesn't "remove" - it removes YOUR reference:
+Think reference counting:
+c// After dup2(fds[0], STDIN_FILENO):
+// The pipe object has THREE references pointing to it:
+// - fds[0] (original reference)  
+// - stdin (fd 0) (new reference via dup2)
+// - fds[1] (write end, different part of same pipe)
+
+close(fds[0]);  // Removes ONE reference (the original fds[0])
+// Pipe object still exists! stdin (fd 0) still points to it
+// Tool program will read from stdin, which now points to pipe
+Analogy: Like having multiple remote controls for one TV. Throwing away one remote doesn't destroy the TV - other remotes still work.

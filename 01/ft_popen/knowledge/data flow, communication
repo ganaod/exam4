@@ -61,3 +61,22 @@ read(fd, buffer, 100);  // Gets "hello\n"
 read(fd, buffer, 100);  // Should get EOF (0 bytes)
                         // But if parent kept write end open, 
                         // this read() blocks FOREVER!
+
+
+
+
+
+
+
+
+
+"Writing to a tool" = sending data to its stdin stream:
+NOT writing to source code. Writing to the running program's input stream.
+c// When you do this:
+int fd = ft_popen("wc", (char*[]){"wc", "-l", NULL}, 'w');
+write(fd, "hello\nworld\n", 12);
+
+// You're sending "hello\nworld\n" to wc's stdin
+// wc reads from stdin, processes the data, outputs "2" (line count)
+// It's like typing "hello\nworld\n" into wc manually
+Mental model: The tool program is running and waiting for input. You're feeding it data through its stdin pipe.

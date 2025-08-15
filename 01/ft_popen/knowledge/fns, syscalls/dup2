@@ -1,0 +1,11 @@
+dup2() creates COPIES, not moves.
+c// Before dup2():
+// fd 0 (stdin) → keyboard
+// fd 3 (pipe read end) → pipe
+
+dup2(fds[0], STDIN_FILENO);  // dup2(3, 0)
+
+// After dup2():
+// fd 0 (stdin) → pipe  ✓ (NEW copy pointing to pipe)
+// fd 3 (pipe read end) → pipe  ✓ (ORIGINAL still exists)
+Now you have TWO file descriptors pointing to the same pipe! That's why we close the originals - cleanup duplicate references.
