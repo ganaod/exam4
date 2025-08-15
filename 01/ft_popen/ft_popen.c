@@ -26,8 +26,10 @@ int	fd_popen(const char *file, char *const argv[1], char type)
 	int	fds[2];
 	if (pipe(fds) == -1)	return -1;
 
+
 	// 3. fork: create worker process
 	pid_t	pid = fork();
+
 	if (pid == -1)	// fork err
 	{
 		close(fds[0]);
@@ -65,7 +67,7 @@ int	fd_popen(const char *file, char *const argv[1], char type)
 		.execvp searches for executable in PATH 
 		.replaces proc image, transforms into tool prog
 		.never returns on success */
-		execvp(file, argv)	
+		execvp(file, argv);	
 	}
 
 

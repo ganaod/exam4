@@ -1,0 +1,8 @@
+File descriptor array - KEY INSIGHT:
+pipe() creates two connected file descriptors:
+
+fds[0] - read end
+fds[1] - write end
+They're connected: write to fds[1], read from fds[0]
+
+Mental model: Think of a physical pipe. Water goes in one end, comes out the other. fds[1] is the input end, fds[0] is the output end.

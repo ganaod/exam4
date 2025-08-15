@@ -1,7 +1,7 @@
 COMMUNICATION TYPES:
 'r': parent reads, child writes (child stdout → pipe → parent)
 'w': parent writes, child reads (parent → pipe → child stdin)
-Understanding data flow direction is crucial
+
 
 
   * COMMUNICATION DIAGRAM:
@@ -29,3 +29,35 @@ Understanding data flow direction is crucial
   * close(fds[0])        |              |         close(fds[0])
   *                      |              |         close(fds[1])
   *                      |              |         dup2(fds[0], STDIN)
+
+
+
+
+
+
+"Why close unused write end?" - This prevents DEADLOCK:
+c// Dangerous scenario - DON'T do this:
+if (type == 'r')
+{
+    // Parent wants to READ from child
+    // If parent keeps write end open but never writes...
+    // close(fds[1]);  // <-- If you comment this out
+    return fds[0];
+}
+What happens:
+
+Child is writing to pipe, then exits
+Parent is reading from pipe
+But pipe still has write end open (in parent process)
+Pipe never signals EOF because a writer still exists
+Parent blocks forever waiting for more data that never comes
+
+The pipe rule: EOF only occurs when ALL write ends are closed.
+
+Example
+int fd = ft_popen("echo", (char*[]){"echo", "hello", NULL}, 'r');
+char buffer[100];
+read(fd, buffer, 100);  // Gets "hello\n"
+read(fd, buffer, 100);  // Should get EOF (0 bytes)
+                        // But if parent kept write end open, 
+                        // this read() blocks FOREVER!

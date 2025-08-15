@@ -1,0 +1,13 @@
+"Which remote to throw away?"
+
+After fork(), BOTH processes have ALL file descriptors:
+// After fork(), BOTH parent and child have:
+// fds[0] (read end)
+// fds[1] (write end)
+// stdin (fd 0) 
+// stdout (fd 1)
+
+The pattern:
+
+	Child: Keeps what it needs for the tool program, closes the rest
+	Parent: Keeps what it needs for communication, closes the rest

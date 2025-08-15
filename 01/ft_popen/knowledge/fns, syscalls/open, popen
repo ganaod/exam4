@@ -1,3 +1,10 @@
+open("file.txt", ...) → access existing file data
+ft_popen("wc", ...) → access running program's input/output streams
+
+Both return file descriptors, but popen creates a live communication channel with a running process.
+
+
+
 POPEN(3)                 BSD Library Functions Manual                 POPEN(3)
 
 NAME

@@ -1,0 +1,10 @@
+Parameter syntax: char *const argv[] = "array of constant pointers to strings". It's how Unix passes command arguments. Each string is an argument: ["ls", "-l", NULL]
+
+
+argv: 
+confusing syntax (char *const []){"ls", NULL} 
+is just C's way of creating an array on the spot. 
+
+It's equivalent to:
+char *args[] = {"ls", NULL};
+The NULL terminator is required by execvp().

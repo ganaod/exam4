@@ -49,6 +49,8 @@ Parent ──→ pipe ──→ Child stdin
 
 ---
 
+
+
 ## III. FILE DESCRIPTOR MANAGEMENT
 
 ### 1. Descriptor Inheritance Model
@@ -67,6 +69,8 @@ Parent ──→ pipe ──→ Child stdin
 - **Parent reading**: Close write end, return read end
 - **Parent writing**: Close read end, return write end
 - **Child**: Close both ends after redirection
+
+
 
 ---
 
@@ -88,6 +92,8 @@ Parent ──→ pipe ──→ Child stdin
 
 ---
 
+
+
 ## V. SECURITY CONSIDERATIONS
 
 ### 1. Command Injection Prevention
@@ -103,6 +109,8 @@ Parent ──→ pipe ──→ Child stdin
 - **Environment**: Inherited unless explicitly modified
 
 ---
+
+
 
 ## VI. IMPLEMENTATION TRADE-OFFS
 

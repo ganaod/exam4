@@ -245,3 +245,37 @@ Before implementing, ask yourself:
 5. **Failures**: What can go wrong? (pipe(), fork(), exec() can all fail)
 
 **Next step**: Now implement with clear understanding of each step's purpose in the larger coordination dance.
+
+
+
+
+
+
+implement simplfied version of popen() that executes cmd & returns fildes connected to their input/output
+
+differences from standard popen():
+
+* 1. SIMPLIFIED INTERFACE:
+*    - popen() uses command string, ft_popen() uses argv[]
+*    - popen() returns FILE*, ft_popen() returns int (fd)
+* 
+* 2. NO SHELL:
+*    - popen() executes command through /bin/sh
+*    - ft_popen() executes directly with execvp()
+*    - More secure (no injection), but less flexible
+* 
+* 3. NO AUTOMATIC CLEANUP:
+*    - popen() pairs with pclose()
+*    - ft_popen() requires manual close() of fd
+*    - Doesn't automatically handle zombie processes
+
+
+
+
+
+
+popen() enables program composition - using any command-line tool as a function within your program. 
+The fork/exec/pipe dance creates two coordinated processes: one becomes the tool, one manages communication.
+The pipe convention: fds[0] read, fds[1] write is arbitrary Unix convention. Could be reversed.
+The pipe(fds) mechanism: Kernel creates pipe object, assigns two unused file descriptor numbers, writes those numbers into your array.
+Why child/parent order: Two different roles need simultaneous execution - child becomes tool program, parent coordinates communication.
